@@ -1,0 +1,205 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pillow Wall — Rules & Scoreboard</title>
+  <style>
+    :root{--bg:#f7f7f8;--card:#ffffff;--muted:#6b7280;--accent:#111827}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:var(--accent);background:var(--bg)}
+    .app{max-width:860px;margin:48px auto;padding:28px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    h1{font-size:20px;margin:0}
+    .tabs{display:flex;gap:8px}
+    button.tab{background:transparent;border:none;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+    button.tab[aria-selected="true"]{background:var(--card);box-shadow:0 6px 18px rgba(17,24,39,0.06)}
+    main{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 6px 18px rgba(17,24,39,0.04)}
+    .cols{display:grid;grid-template-columns:1fr 320px;gap:20px}
+    @media (max-width:880px){.cols{grid-template-columns:1fr}}
+    .rules h2{margin-top:0}
+    .rules ul{padding-left:18px;color:var(--muted)}
+    .muted{color:var(--muted);font-size:13px}
+    /* scoreboard */
+    .score-panel{display:flex;flex-direction:column;gap:12px}
+    label{font-size:13px;color:var(--muted)}
+    input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ee;background:transparent}
+    .row{display:flex;gap:8px}
+    .row .half{flex:1}
+    .btn{padding:10px 12px;border-radius:8px;border:none;background:#111827;color:#fff;font-weight:600;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid #e6e9ee}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;text-align:left;border-bottom:1px solid #f2f4f7;font-size:14px}
+    .stats{background:#fbfbfc;padding:10px;border-radius:8px}
+    .center{display:flex;gap:8px;align-items:center}
+    footer{margin-top:16px;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Pillow Wall — Rules & Scoreboard</h1>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-target="#rules">Rules</button>
+        <button class="tab" role="tab" aria-selected="false" data-target="#scoreboard">Scoreboard</button>
+      </div>
+    </header><main>
+  <div class="cols">
+    <section id="rules" class="rules" tabindex="0">
+      <h2>COUSSIN‑MUR — Pillow Wall Game (English rules)</h2>
+      <p class="muted">A concise, minimal description of the rules for quick reference.</p>
+
+      <ul>
+        <li><strong>Objective:</strong> Be the first player to reach <strong>10 points</strong>.</li>
+        <li>A point is scored when the pillow touches the back wall behind the opponent <strong>before</strong> they catch it.</li>
+        <li>Two players stand at opposite ends of the playing area, each defending the wall behind them. Clear the space between players before starting.</li>
+        <li><strong>Start:</strong> Player A throws the pillow toward Player B's wall. Player B tries to catch it before it hits their wall.</li>
+        <li>If the pillow hits the back wall behind the opponent, the thrower scores <strong>1 point</strong>. If the pillow touches the floor first or leaves the room, no point is scored.</li>
+        <li>The player who conceded the point (the one whose wall was hit) throws next.</li>
+        <li><strong>Rebounds are allowed:</strong> the pillow may bounce off side walls or the ceiling before reaching the back wall.</li>
+        <li><strong>Speed mode:</strong> after catching the pillow, the catcher has <strong>3 seconds</strong> to make the next throw.</li>
+        <li>All throws must be made by hand. Kicking or dangerous throws are not allowed.</li>
+        <li>The first player to reach <strong>10 points</strong> wins. At <strong>9–9</strong>, a player must lead by <strong>2 points</strong> to win.</li>
+      </ul>
+
+      <p class="muted">Tip: Play in a room with soft walls and remove fragile objects. Agree on what counts as "leaving the room" before starting.</p>
+    </section>
+
+    <aside id="scoreboard" class="score-panel" hidden>
+      <div class="center">
+        <strong>Match input — Daniel vs Valentin</strong>
+        <button id="openPanel" class="btn ghost" style="margin-left:auto">Open panel</button>
+      </div>
+
+      <div id="panel" hidden>
+        <div class="row">
+          <div class="half">
+            <label for="danielScore">Daniel — points</label>
+            <input id="danielScore" type="number" min="0" value="0">
+          </div>
+          <div class="half">
+            <label for="valentinScore">Valentin — points</label>
+            <input id="valentinScore" type="number" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="addMatch" class="btn">Add match</button>
+          <button id="clearMatches" class="btn ghost">Clear all</button>
+        </div>
+
+        <div style="margin-top:8px">
+          <strong>Recent matches</strong>
+          <table id="matchesTable" aria-live="polite">
+            <thead><tr><th>#</th><th>Daniel</th><th>Valentin</th><th>Winner</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:10px" class="stats">
+          <div><strong>Statistics</strong></div>
+          <div id="statsContent">No matches yet.</div>
+        </div>
+      </div>
+
+      <footer>Stats are stored locally in your browser (localStorage). They remain until you clear them.</footer>
+    </aside>
+  </div>
+</main>
+
+  </div>  <script>
+    // Basic tab behavior
+    document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', e => {
+      document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected','false'));
+      btn.setAttribute('aria-selected','true');
+      const target = btn.dataset.target;
+      document.querySelectorAll('main > .cols > *').forEach(s => s.hidden = true);
+      document.querySelector(target).hidden = false;
+      // Ensure scoreboard panel hidden state is preserved
+    }));
+
+    // initialize: show rules and hide scoreboard
+    document.querySelectorAll('main > .cols > *').forEach((s,i)=> s.hidden = (s.id !== 'rules'));
+
+    // Score panel logic
+    const openPanel = document.getElementById('openPanel');
+    const panel = document.getElementById('panel');
+    const danielInput = document.getElementById('danielScore');
+    const valentinInput = document.getElementById('valentinScore');
+    const addMatchBtn = document.getElementById('addMatch');
+    const clearMatchesBtn = document.getElementById('clearMatches');
+    const matchesTableBody = document.querySelector('#matchesTable tbody');
+    const statsContent = document.getElementById('statsContent');
+
+    openPanel.addEventListener('click', ()=>{
+      panel.hidden = !panel.hidden;
+      openPanel.textContent = panel.hidden ? 'Open panel' : 'Close panel';
+    });
+
+    // Storage helpers
+    function loadMatches(){
+      try{ return JSON.parse(localStorage.getItem('pillow_matches')||'[]'); }catch(e){ return []; }
+    }
+    function saveMatches(list){ localStorage.setItem('pillow_matches', JSON.stringify(list)); }
+
+    function renderMatches(){
+      const matches = loadMatches();
+      matchesTableBody.innerHTML = '';
+      matches.forEach((m,i)=>{
+        const tr = document.createElement('tr');
+        const winner = m.daniel === m.valentin ? 'Tie' : (m.daniel>m.valentin ? 'Daniel' : 'Valentin');
+        tr.innerHTML = `<td>${i+1}</td><td>${m.daniel}</td><td>${m.valentin}</td><td>${winner}</td>`;
+        matchesTableBody.appendChild(tr);
+      });
+      renderStats(matches);
+    }
+
+    function renderStats(matches){
+      if(!matches.length){ statsContent.textContent = 'No matches yet.'; return; }
+      let danielWins = 0, valentinWins = 0, ties = 0;
+      let danielPoints = 0, valentinPoints = 0;
+      matches.forEach(m=>{
+        danielPoints += m.daniel; valentinPoints += m.valentin;
+        if(m.daniel === m.valentin) ties++; else if(m.daniel>m.valentin) danielWins++; else valentinWins++;
+      });
+      const total = matches.length;
+      const danielWinRate = (danielWins/total*100).toFixed(1);
+      const valentinWinRate = (valentinWins/total*100).toFixed(1);
+      const danielAvgPts = (danielPoints/total).toFixed(2);
+      const valentinAvgPts = (valentinPoints/total).toFixed(2);
+
+      statsContent.innerHTML = `
+        <div>Matches: <strong>${total}</strong> · Ties: <strong>${ties}</strong></div>
+        <div style="margin-top:6px">Daniel — Wins: <strong>${danielWins}</strong> (${danielWinRate}% win rate), Avg points: <strong>${danielAvgPts}</strong></div>
+        <div>Valentin — Wins: <strong>${valentinWins}</strong> (${valentinWinRate}% win rate), Avg points: <strong>${valentinAvgPts}</strong></div>
+      `;
+    }
+
+    addMatchBtn.addEventListener('click', ()=>{
+      const d = Math.max(0, Math.floor(Number(danielInput.value) || 0));
+      const v = Math.max(0, Math.floor(Number(valentinInput.value) || 0));
+      const matches = loadMatches();
+      matches.push({daniel:d, valentin:v, created: Date.now()});
+      saveMatches(matches);
+      renderMatches();
+      // clear inputs for next
+      danielInput.value = 0; valentinInput.value = 0;
+    });
+
+    clearMatchesBtn.addEventListener('click', ()=>{
+      if(confirm('Clear all saved matches?')){
+        localStorage.removeItem('pillow_matches');
+        renderMatches();
+      }
+    });
+
+    // initial render
+    renderMatches();
+
+    // accessibility: switch to scoreboard tab when user selects it
+    document.querySelector('[data-target="#scoreboard"]').addEventListener('click', ()=>{
+      // reveal scoreboard aside so user can open panel quickly
+      document.getElementById('scoreboard').hidden = false;
+    });
+  </script></body>
+</html>
